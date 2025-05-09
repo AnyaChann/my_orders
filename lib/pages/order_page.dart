@@ -32,8 +32,7 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
-    Future<void> _addOrder() async {
-    // Validate input fields
+  Future<void> _addOrder() async {
     if (_itemController.text.isEmpty ||
         _itemNameController.text.isEmpty ||
         _priceController.text.isEmpty ||
@@ -44,26 +43,24 @@ class _OrderPageState extends State<OrderPage> {
       );
       return;
     }
-  
-    // Validate price and quantity
+
     final price = double.tryParse(_priceController.text);
     final quantity = int.tryParse(_quantityController.text);
-  
+
     if (price == null || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid price')),
       );
       return;
     }
-  
+
     if (quantity == null || quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid quantity')),
       );
       return;
     }
-  
-    // Create a new order
+
     final newOrder = Order(
       item: _itemController.text,
       itemName: _itemNameController.text,
@@ -71,29 +68,24 @@ class _OrderPageState extends State<OrderPage> {
       currency: _currencyController.text,
       quantity: quantity,
     );
-  
-    // Add the order to the list
+
     setState(() {
       _orders.add(newOrder);
     });
-  
-    // Save the updated list to the JSON file
+
     await _orderService.saveOrders(_orders);
-  
-    // Clear input fields
     _clearInputFields();
-  
-    // Show success message
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Order added successfully')),
     );
   }
+
   Future<void> _deleteOrder(int index) async {
     setState(() {
       _orders.removeAt(index);
     });
 
-    // Save the updated list to the JSON file
     await _orderService.saveOrders(_orders);
   }
 
@@ -105,90 +97,188 @@ class _OrderPageState extends State<OrderPage> {
     _quantityController.clear();
   }
 
-  List<Order> _searchOrders(String query) {
-    return _orders
-        .where((order) => order.itemName.toLowerCase().contains(query.toLowerCase()))
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Order Management'),
+        title: const Text('My Order'),
+        centerTitle: true,
+        backgroundColor: Colors.orange,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search by Item Name',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {});
-              },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _itemController,
+                        decoration: const InputDecoration(
+                          labelText: 'Item',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _itemNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Item Name',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _priceController,
+                        decoration: const InputDecoration(
+                          labelText: 'Price',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _quantityController,
+                        decoration: const InputDecoration(
+                          labelText: 'Quantity',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _currencyController,
+                        decoration: const InputDecoration(
+                          labelText: 'Currency',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _addOrder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                  ),
+                  child: const Text('Add Item to Cart'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _searchController.text.isEmpty
-                    ? _orders.length
-                    : _searchOrders(_searchController.text).length,
-                itemBuilder: (context, index) {
-                  final ordersToShow = _searchController.text.isEmpty
-                      ? _orders
-                      : _searchOrders(_searchController.text);
-                  final order = ordersToShow[index];
-                  return ListTile(
-                    title: Text(order.itemName),
-                    subtitle: Text('Price: ${order.price} ${order.currency}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Table(
+                border: TableBorder.all(color: Colors.orange),
+                columnWidths: const {
+                  0: FixedColumnWidth(50),
+                  1: FlexColumnWidth(),
+                  2: FlexColumnWidth(),
+                  3: FixedColumnWidth(80),
+                  4: FixedColumnWidth(80),
+                  5: FixedColumnWidth(80),
+                  6: FixedColumnWidth(50),
+                },
+                children: [
+                  TableRow(
+                    decoration: const BoxDecoration(color: Colors.orange),
+                    children: const [
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Id', style: TextStyle(color: Colors.white)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Item', style: TextStyle(color: Colors.white)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Item Name', style: TextStyle(color: Colors.white)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Quantity', style: TextStyle(color: Colors.white)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Price', style: TextStyle(color: Colors.white)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text('Currency', style: TextStyle(color: Colors.white)),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(''),
+                      ),
+                    ],
+                  ),
+                  ..._orders.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final order = entry.value;
+                    return TableRow(
                       children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text('${index + 1}'),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(order.item),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(order.itemName),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text('${order.quantity}'),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text('${order.price}'),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(order.currency),
+                        ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _deleteOrder(index),
                         ),
                       ],
-                    ),
-                  );
-                },
+                    );
+                  }).toList(),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const Text('Add New Order', style: TextStyle(fontSize: 18)),
-            TextField(
-              controller: _itemController,
-              decoration: const InputDecoration(labelText: 'Item'),
+          ),
+          Container(
+            color: Colors.orange,
+            padding: const EdgeInsets.all(16.0),
+            child: const Center(
+              child: Text(
+                'Số 8, Tôn Thất Thuyết, Cầu Giấy, Hà Nội',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
-            TextField(
-              controller: _itemNameController,
-              decoration: const InputDecoration(labelText: 'Item Name'),
-            ),
-            TextField(
-              controller: _priceController,
-              decoration: const InputDecoration(labelText: 'Price'),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _currencyController,
-              decoration: const InputDecoration(labelText: 'Currency'),
-            ),
-            TextField(
-              controller: _quantityController,
-              decoration: const InputDecoration(labelText: 'Quantity'),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _addOrder,
-              child: const Text('Add Order'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
