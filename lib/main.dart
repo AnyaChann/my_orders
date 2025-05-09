@@ -1,122 +1,191 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 void main() {
   runApp(const MyApp());
 }
 
+class Order {
+  final String item;
+  final String itemName;
+  final double price;
+  final String currency;
+  final int quantity;
+
+  Order({
+    required this.item,
+    required this.itemName,
+    required this.price,
+    required this.currency,
+    required this.quantity,
+  });
+
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      item: json['Item'],
+      itemName: json['ItemName'],
+      price: json['Price'].toDouble(),
+      currency: json['Currency'],
+      quantity: json['Quantity'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'Item': item,
+      'ItemName': itemName,
+      'Price': price,
+      'Currency': currency,
+      'Quantity': quantity,
+    };
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Order Management',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const OrderPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class OrderPage extends StatefulWidget {
+  const OrderPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<OrderPage> createState() => _OrderPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _OrderPageState extends State<OrderPage> {
+  final List<Order> _orders = [];
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _itemController = TextEditingController();
+  final TextEditingController _itemNameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _currencyController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController();
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _loadOrders();
+  }
+
+  Future<void> _loadOrders() async {
+    final String jsonString = await rootBundle.loadString('assets/orders.json');
+    final List<dynamic> jsonData = json.decode(jsonString);
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _orders.addAll(jsonData.map((e) => Order.fromJson(e)).toList());
     });
+  }
+
+  void _addOrder() {
+    final newOrder = Order(
+      item: _itemController.text,
+      itemName: _itemNameController.text,
+      price: double.tryParse(_priceController.text) ?? 0.0,
+      currency: _currencyController.text,
+      quantity: int.tryParse(_quantityController.text) ?? 0,
+    );
+    setState(() {
+      _orders.add(newOrder);
+    });
+    _clearInputFields();
+  }
+
+  void _clearInputFields() {
+    _itemController.clear();
+    _itemNameController.clear();
+    _priceController.clear();
+    _currencyController.clear();
+    _quantityController.clear();
+  }
+
+  List<Order> _searchOrders(String query) {
+    return _orders
+        .where((order) => order.itemName.toLowerCase().contains(query.toLowerCase()))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Order Management'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search by Item Name',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                setState(() {});
+              },
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _searchController.text.isEmpty
+                    ? _orders.length
+                    : _searchOrders(_searchController.text).length,
+                itemBuilder: (context, index) {
+                  final ordersToShow = _searchController.text.isEmpty
+                      ? _orders
+                      : _searchOrders(_searchController.text);
+                  final order = ordersToShow[index];
+                  return ListTile(
+                    title: Text(order.itemName),
+                    subtitle: Text('Price: ${order.price} ${order.currency}'),
+                    trailing: Text('Qty: ${order.quantity}'),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Add New Order', style: TextStyle(fontSize: 18)),
+            TextField(
+              controller: _itemController,
+              decoration: const InputDecoration(labelText: 'Item'),
+            ),
+            TextField(
+              controller: _itemNameController,
+              decoration: const InputDecoration(labelText: 'Item Name'),
+            ),
+            TextField(
+              controller: _priceController,
+              decoration: const InputDecoration(labelText: 'Price'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _currencyController,
+              decoration: const InputDecoration(labelText: 'Currency'),
+            ),
+            TextField(
+              controller: _quantityController,
+              decoration: const InputDecoration(labelText: 'Quantity'),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _addOrder,
+              child: const Text('Add Order'),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
