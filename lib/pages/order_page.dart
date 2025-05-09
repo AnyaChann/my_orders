@@ -32,25 +32,62 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
-  Future<void> _addOrder() async {
+    Future<void> _addOrder() async {
+    // Validate input fields
+    if (_itemController.text.isEmpty ||
+        _itemNameController.text.isEmpty ||
+        _priceController.text.isEmpty ||
+        _currencyController.text.isEmpty ||
+        _quantityController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+  
+    // Validate price and quantity
+    final price = double.tryParse(_priceController.text);
+    final quantity = int.tryParse(_quantityController.text);
+  
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid price')),
+      );
+      return;
+    }
+  
+    if (quantity == null || quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid quantity')),
+      );
+      return;
+    }
+  
+    // Create a new order
     final newOrder = Order(
       item: _itemController.text,
       itemName: _itemNameController.text,
-      price: double.tryParse(_priceController.text) ?? 0.0,
+      price: price,
       currency: _currencyController.text,
-      quantity: int.tryParse(_quantityController.text) ?? 0,
+      quantity: quantity,
     );
-
+  
+    // Add the order to the list
     setState(() {
       _orders.add(newOrder);
     });
-
+  
     // Save the updated list to the JSON file
     await _orderService.saveOrders(_orders);
-
+  
+    // Clear input fields
     _clearInputFields();
+  
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Order added successfully')),
+    );
   }
-
   Future<void> _deleteOrder(int index) async {
     setState(() {
       _orders.removeAt(index);
