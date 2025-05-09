@@ -32,7 +32,7 @@ class _OrderPageState extends State<OrderPage> {
     });
   }
 
-  void _addOrder() {
+  Future<void> _addOrder() async {
     final newOrder = Order(
       item: _itemController.text,
       itemName: _itemNameController.text,
@@ -40,10 +40,24 @@ class _OrderPageState extends State<OrderPage> {
       currency: _currencyController.text,
       quantity: int.tryParse(_quantityController.text) ?? 0,
     );
+
     setState(() {
       _orders.add(newOrder);
     });
+
+    // Save the updated list to the JSON file
+    await _orderService.saveOrders(_orders);
+
     _clearInputFields();
+  }
+
+  Future<void> _deleteOrder(int index) async {
+    setState(() {
+      _orders.removeAt(index);
+    });
+
+    // Save the updated list to the JSON file
+    await _orderService.saveOrders(_orders);
   }
 
   void _clearInputFields() {
@@ -94,7 +108,15 @@ class _OrderPageState extends State<OrderPage> {
                   return ListTile(
                     title: Text(order.itemName),
                     subtitle: Text('Price: ${order.price} ${order.currency}'),
-                    trailing: Text('Qty: ${order.quantity}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteOrder(index),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
